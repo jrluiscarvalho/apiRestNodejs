@@ -1,12 +1,15 @@
 var express = require('express'),
     bodyParser = require('body-parser'),
-    mongodb = require('mongodb')
+    multiparty = require('connect-multiparty'),
+    mongodb = require('mongodb'),
+    fs = require('fs'),
     objectId = require('mongodb').ObjectId;
 
 var app = express();
 
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(bodyParser.json());
+app.use(multiparty());
 
 var port = 3000;
 
@@ -24,16 +27,39 @@ var db = new mongodb.Db(
 
 console.log('Servidor http esta escutando na porta ' + port);
 
-app.get('/', function(req, res){
+app.get('/', function(req,  res){
     res.send({msg: 'teste'});
 });
 
  
 
 app.post('/api', function(req, res){
-    var dados = req.body;
     
-    db.open( function(err, mongoclient){
+    res.setHeader("Access-Control-Allow-Origin", "*");
+
+    var date = new Date();
+    time_stamp = date.getTime();
+    
+    var url_imagem = time_stamp + '_' + req.files.arquivo.originalFileName;
+
+    var path_origem = req.files.arquivo.path;
+    var path_destino = './uploads/' + req.files.arquivo.originalFileName;
+
+    var url_imagem = time_stamp + '_' + req.files.arquivo.originalFileName;
+
+    fs.rename(path_origem, path_destino, function(err){
+        if(err){
+            res.status(500).json({error: err});
+            return;
+        }
+
+        var dados = {
+            url_iamgem: url_imagem,
+            titulo: req.body.titulo
+        }
+        
+
+        db.open( function(err, mongoclient){
         mongoclient.collection('postagens', function(err, collection){
             collection.insert(dados, function(err, records){
                 if(err){
@@ -47,9 +73,17 @@ app.post('/api', function(req, res){
     });
     
     res.send(dados);
+    });
+
+    console.log(req.files);
+    
+    
 });
 
 app.get('/api', function(req, res){
+    
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    
     db.open(function(err, mongoclient){
         mongoclient.collection('postagens', function(err, collection){
             collection.find().toArray(function(err, results){
@@ -79,6 +113,21 @@ app.get('/api/:id', function(req, res){
         });
     });
 });
+
+
+
+app.get('/uploads/:imagem', function(req, res){
+    var img = req.params.imagem;
+    fs.readFile('./uploads/' + img, function(err, content){
+        if(err){
+            res.status(400).json(err);
+            return;
+        }
+        res.writeHead(200, {'' : '', '' : '', '' : '', '' : ''})
+        res.end(content);
+    });
+})
+
 
 
 app.put('/api/:id', function(req, res){
