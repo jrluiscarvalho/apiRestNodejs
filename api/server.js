@@ -2,8 +2,8 @@ var express = require('express'),
     bodyParser = require('body-parser'),
     multiparty = require('connect-multiparty'),
     mongodb = require('mongodb'),
-    fs = require('fs'),
-    objectId = require('mongodb').ObjectId;
+    objectId = require('mongodb').ObjectId,
+    fs = require('fs');
 
 var app = express();
 
@@ -39,13 +39,15 @@ app.post('/api', function(req, res){
 
     var date = new Date();
     time_stamp = date.getTime();
-    
-    var url_imagem = time_stamp + '_' + req.files.arquivo.originalFileName;
+
+    console.log(req.files.arquivo.originalFilename);
+
+    var url_imagem = time_stamp + '_' + req.files.arquivo.originalFilename;
 
     var path_origem = req.files.arquivo.path;
-    var path_destino = './uploads/' + req.files.arquivo.originalFileName;
+    var path_destino = './uploads/' + req.files.arquivo.originalFilename;
 
-    var url_imagem = time_stamp + '_' + req.files.arquivo.originalFileName;
+    
 
     fs.rename(path_origem, path_destino, function(err){
         if(err){
@@ -54,7 +56,7 @@ app.post('/api', function(req, res){
         }
 
         var dados = {
-            url_iamgem: url_imagem,
+            url_imagem: url_imagem,
             titulo: req.body.titulo
         }
         
@@ -162,7 +164,7 @@ app.delete('/api/:id', function(req, res){
                         }else{
                             res.json(records);
                         }
-
+                        mongoclient.close();
             });
         });
     });
